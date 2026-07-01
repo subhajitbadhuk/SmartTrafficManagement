@@ -1,0 +1,22 @@
+# Dataset Root
+path: .
+
+# Train / Validation / Test
+train: train/images
+val: valid/images
+test: test/images
+
+# Number of classes
+nc: 9
+
+# Class names
+names:
+  0: Car
+  1: Bus
+  2: Truck
+  3: Motorcycle
+  4: Auto_Rickshaw
+  5: E_Rickshaw
+  6: Ambulance
+  7: Bicycle
+  8: Tractor

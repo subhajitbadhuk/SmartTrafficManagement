@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Traffic Management System</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="header">
+        <h1>Smart Traffic Management System</h1>
+        <p></p>
+    </header>
+
+    <div class="upload-section">
+
+        <h2>Upload Road Images</h2>
+
+        <div class="upload-box">
+
+            <div class="upload-item">
+                <label>Lane 1 Image</label>
+                <input type="file" id="lane1Input" accept="image/*">
+            </div>
+
+            <div class="upload-item">
+                <label>Lane 2 Image</label>
+                <input type="file" id="lane2Input" accept="image/*">
+            </div>
+
+            <div class="upload-item">
+                <label>Lane 3 Image</label>
+                <input type="file" id="lane3Input" accept="image/*">
+            </div>
+
+            <div class="upload-item">
+                <label>Lane 4 Image</label>
+                <input type="file" id="lane4Input" accept="image/*">
+            </div>
+
+        </div>
+
+        <button id="uploadBtn">
+            Upload Images
+        </button>
+
+    </div>
+
+    <div class="instructions">
+
+        <h2>Lane Selection</h2>
+
+        <p>Click on each image to draw the lane area polygon.</p>
+
+        <p>Use 4 or more points to define the lane boundary.</p>
+
+    </div>
+
+    <div class="preview-grid">
+
+        <div class="preview-card">
+            <h3>Lane 1</h3>
+            <canvas id="canvas1" width="700" height="400"></canvas>
+        </div>
+
+        <div class="preview-card">
+            <h3>Lane 2</h3>
+            <canvas id="canvas2" width="700" height="400"></canvas>
+        </div>
+
+        <div class="preview-card">
+            <h3>Lane 3</h3>
+            <canvas id="canvas3" width="700" height="400"></canvas>
+        </div>
+
+        <div class="preview-card">
+            <h3>Lane 4</h3>
+            <canvas id="canvas4" width="700" height="400"></canvas>
+        </div>
+
+    </div>
+
+    <div class="action-buttons">
+
+        <button id="savePolygonsBtn">
+            Save Lane Areas
+        </button>
+
+        <button id="processTrafficBtn">
+            Start Detection
+        </button>
+
+    </div>
+
+    <div id="loadingBox" class="loading-box" style="display:none;">
+
+        <h2>🚦 Processing Traffic...</h2>
+
+        <p>Please wait while YOLO detects vehicles.</p>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
