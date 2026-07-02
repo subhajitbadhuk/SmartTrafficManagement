@@ -12,27 +12,127 @@ CORS(app)
 # PATHS
 # -----------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(BASE_DIR)
+FRONTEND_FOLDER = os.path.join(PROJECT_DIR, "frontend")
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # -----------------------------
-# LOAD YOLO
+# LOAD CUSTOM YOLO MODEL
 # -----------------------------
-model = YOLO("../yolov8n.pt")
+MODEL_PATH = os.path.join(BASE_DIR, "..", "best.pt")
+model = YOLO(MODEL_PATH)
 
-VEHICLE_CLASSES = [
+# -----------------------------
+# VEHICLE CLASSES
+# -----------------------------
+VEHICLE_CLASSES = {
     "car",
     "bus",
     "truck",
-    "motorcycle"
-]
+    "motorcycle",
+    "autorickshaw",
+    "bicycle"
+}
+
+CLASS_ALIASES = {
+    "car": "car",
+    "caravan": "car",
+    "vehicle fallback": "car",
+    "bus": "bus",
+    "truck": "truck",
+    "trailer": "truck",
+    "motorcycle": "motorcycle",
+    "autorickshaw": "autorickshaw",
+    "bicycle": "bicycle"
+}
+
+DETECTION_CONFIDENCE = 0.25
+DETECTION_IMAGE_SIZE = 1280
+DISPLAY_CONFIDENCE = 0.35
+
+CLASS_COLORS = {
+    "car": (0, 200, 0),
+    "bus": (255, 170, 0),
+    "truck": (0, 140, 255),
+    "motorcycle": (255, 0, 180),
+    "autorickshaw": (0, 220, 255),
+    "bicycle": (180, 80, 255)
+}
+
+
+def draw_detection(image, class_name, confidence, x1, y1, x2, y2):
+    color = CLASS_COLORS.get(
+        class_name,
+        (0, 200, 0)
+    )
+
+    cv2.rectangle(
+        image,
+        (x1, y1),
+        (x2, y2),
+        color,
+        2
+    )
+
+    label = f"{class_name} {confidence * 100:.0f}%"
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.5
+    thickness = 1
+
+    text_size, baseline = cv2.getTextSize(
+        label,
+        font,
+        font_scale,
+        thickness
+    )
+
+    text_width, text_height = text_size
+    label_x = max(x1, 0)
+    label_y = max(y1 - 8, text_height + 8)
+
+    cv2.rectangle(
+        image,
+        (label_x, label_y - text_height - baseline - 6),
+        (label_x + text_width + 8, label_y + baseline),
+        color,
+        -1
+    )
+
+    cv2.putText(
+        image,
+        label,
+        (label_x + 4, label_y - 4),
+        font,
+        font_scale,
+        (255, 255, 255),
+        thickness,
+        cv2.LINE_AA
+    )
 
 # -----------------------------
 # HOME
 # -----------------------------
 @app.route("/")
 def home():
+    return send_from_directory(
+        FRONTEND_FOLDER,
+        "index.html"
+    )
+
+
+@app.route("/<path:filename>")
+def frontend_file(filename):
+    return send_from_directory(
+        FRONTEND_FOLDER,
+        filename
+    )
+
+
+@app.route("/api/status")
+def api_status():
     return jsonify({
         "message": "Smart Traffic Backend Running"
     })
@@ -59,20 +159,21 @@ def upload():
 
         file = request.files.get(f"lane{i}")
 
-        if file:
+        if file is None:
+            return jsonify({
+                "error": f"Lane {i} image not received."
+            }), 400
 
-            save_path = os.path.join(
-                UPLOAD_FOLDER,
-                f"road{i}.jpg"
-            )
+        save_path = os.path.join(
+            UPLOAD_FOLDER,
+            f"road{i}.jpg"
+        )
 
-            file.save(save_path)
+        file.save(save_path)
 
     return jsonify({
         "message": "Images uploaded successfully"
     })
-
-
 # -----------------------------
 # PROCESS TRAFFIC
 # -----------------------------
@@ -104,6 +205,8 @@ def process_traffic():
                 "buses": 0,
                 "trucks": 0,
                 "motorcycles": 0,
+                "autorickshaws": 0,
+                "bicycles": 0,
                 "total": 0
             }
 
@@ -111,22 +214,50 @@ def process_traffic():
 
         image = cv2.imread(image_path)
 
-        detections = model(image)
+        if image is None:
+           results_data[lane_name] = {
+              "error": "Unable to read image."
+           }
+           continue
+
+        detections = model(
+               image,
+               conf=DETECTION_CONFIDENCE,
+               imgsz=DETECTION_IMAGE_SIZE,
+               verbose=False
+         )
 
         count = 0
+
         cars = 0
         buses = 0
         trucks = 0
         motorcycles = 0
+        autorickshaws = 0
+        bicycles = 0
 
         if len(polygon_points) >= 3:
 
             polygon = np.array(
-                [
-                    [p["x"], p["y"]]
-                    for p in polygon_points
-                ],
+                [[p["x"], p["y"]] for p in polygon_points],
                 dtype=np.int32
+            )
+
+            overlay = image.copy()
+
+            cv2.fillPoly(
+                overlay,
+                [polygon],
+                (255, 255, 0)
+            )
+
+            cv2.addWeighted(
+                overlay,
+                0.08,
+                image,
+                0.92,
+                0,
+                image
             )
 
             cv2.polylines(
@@ -134,7 +265,7 @@ def process_traffic():
                 [polygon],
                 True,
                 (255, 255, 0),
-                3
+                2
             )
 
         else:
@@ -148,11 +279,17 @@ def process_traffic():
             for box in boxes:
 
                 cls_id = int(box.cls[0])
+                detected_class_name = model.names[cls_id]
+                class_name = CLASS_ALIASES.get(
+                    detected_class_name
+                )
 
-                class_name = model.names[cls_id]
-
-                if class_name not in VEHICLE_CLASSES:
+                if class_name is None:
                     continue
+
+                confidence = float(box.conf[0])
+                if confidence < DISPLAY_CONFIDENCE:
+                   continue
 
                 x1, y1, x2, y2 = map(
                     int,
@@ -188,24 +325,20 @@ def process_traffic():
                     elif class_name == "motorcycle":
                         motorcycles += 1
 
-                    # GREEN BOX
-                    cv2.rectangle(
-                        image,
-                        (x1, y1),
-                        (x2, y2),
-                        (0, 255, 0),
-                        2
-                    )
+                    elif class_name == "autorickshaw":
+                        autorickshaws += 1
 
-                    # LABEL
-                    cv2.putText(
+                    elif class_name == "bicycle":
+                        bicycles += 1
+
+                    draw_detection(
                         image,
                         class_name,
-                        (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.6,
-                        (0, 255, 0),
-                        2
+                        confidence,
+                        x1,
+                        y1,
+                        x2,
+                        y2
                     )
 
         detected_path = os.path.join(
@@ -224,13 +357,14 @@ def process_traffic():
             "buses": buses,
             "trucks": trucks,
             "motorcycles": motorcycles,
+            "autorickshaws": autorickshaws,
+            "bicycles": bicycles,
             "total": count
 
         }
-
-    # -----------------------------
-    # SIGNAL LOGIC
-    # -----------------------------
+# -----------------------------
+# SIGNAL LOGIC
+# -----------------------------
 
     lane_counts = {
 
@@ -248,6 +382,7 @@ def process_traffic():
 
     max_count = lane_counts[max_lane]
 
+    # Minimum 10 sec, Maximum 40 sec
     green_time = min(
         max(10, max_count),
         40
@@ -279,7 +414,7 @@ def process_traffic():
 
 
 # -----------------------------
-# RUN
+# RUN FLASK
 # -----------------------------
 if __name__ == "__main__":
 

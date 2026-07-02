@@ -9,98 +9,125 @@
 </head>
 <body>
 
-    <header class="header">
-        <h1>Smart Traffic Management System</h1>
-        <p></p>
-    </header>
+    <main class="app-shell">
 
-    <div class="upload-section">
+        <header class="header">
+            <div>
+                <p class="eyebrow">AI Traffic Control</p>
+                <h1>Smart Traffic Management System</h1>
+            </div>
+            <div class="header-chip">YOLOv8</div>
+        </header>
 
-        <h2>Upload Road Images</h2>
+        <section class="bento-panel upload-section">
 
-        <div class="upload-box">
-
-            <div class="upload-item">
-                <label>Lane 1 Image</label>
-                <input type="file" id="lane1Input" accept="image/*">
+            <div class="section-title">
+                <h2>Road Inputs</h2>
+                <span>4 lanes</span>
             </div>
 
-            <div class="upload-item">
-                <label>Lane 2 Image</label>
-                <input type="file" id="lane2Input" accept="image/*">
+            <div class="upload-box">
+
+                <div class="upload-item">
+                    <span class="lane-badge">01</span>
+                    <label>Lane 1 Image</label>
+                    <input type="file" id="lane1Input" accept="image/*">
+                </div>
+
+                <div class="upload-item">
+                    <span class="lane-badge">02</span>
+                    <label>Lane 2 Image</label>
+                    <input type="file" id="lane2Input" accept="image/*">
+                </div>
+
+                <div class="upload-item">
+                    <span class="lane-badge">03</span>
+                    <label>Lane 3 Image</label>
+                    <input type="file" id="lane3Input" accept="image/*">
+                </div>
+
+                <div class="upload-item">
+                    <span class="lane-badge">04</span>
+                    <label>Lane 4 Image</label>
+                    <input type="file" id="lane4Input" accept="image/*">
+                </div>
+
             </div>
 
-            <div class="upload-item">
-                <label>Lane 3 Image</label>
-                <input type="file" id="lane3Input" accept="image/*">
+        </section>
+
+        <section class="bento-panel instructions">
+
+            <div>
+                <h2>Lane Selection</h2>
+                <p>Select images and mark the active road area.</p>
             </div>
 
-            <div class="upload-item">
-                <label>Lane 4 Image</label>
-                <input type="file" id="lane4Input" accept="image/*">
+            <div class="step-row">
+                <span>Upload</span>
+                <span>Mark Area</span>
+                <span>Detect</span>
             </div>
 
+        </section>
+
+        <section class="preview-grid">
+
+            <div class="preview-card">
+                <div class="card-head">
+                    <h3>Lane 1</h3>
+                    <span>North</span>
+                </div>
+                <canvas id="canvas1" width="700" height="400"></canvas>
+            </div>
+
+            <div class="preview-card">
+                <div class="card-head">
+                    <h3>Lane 2</h3>
+                    <span>East</span>
+                </div>
+                <canvas id="canvas2" width="700" height="400"></canvas>
+            </div>
+
+            <div class="preview-card">
+                <div class="card-head">
+                    <h3>Lane 3</h3>
+                    <span>South</span>
+                </div>
+                <canvas id="canvas3" width="700" height="400"></canvas>
+            </div>
+
+            <div class="preview-card">
+                <div class="card-head">
+                    <h3>Lane 4</h3>
+                    <span>West</span>
+                </div>
+                <canvas id="canvas4" width="700" height="400"></canvas>
+            </div>
+
+        </section>
+
+        <div class="action-buttons">
+
+            <button id="savePolygonsBtn">
+                Save Lane Areas
+            </button>
+
+            <button id="processTrafficBtn">
+                Start Detection
+            </button>
+
         </div>
 
-        <button id="uploadBtn">
-            Upload Images
-        </button>
+        <div id="loadingBox" class="loading-box" style="display:none;">
 
-    </div>
+            <h2>Processing Traffic...</h2>
 
-    <div class="instructions">
+            <p>Please wait while YOLO detects vehicles.</p>
 
-        <h2>Lane Selection</h2>
-
-        <p>Click on each image to draw the lane area polygon.</p>
-
-        <p>Use 4 or more points to define the lane boundary.</p>
-
-    </div>
-
-    <div class="preview-grid">
-
-        <div class="preview-card">
-            <h3>Lane 1</h3>
-            <canvas id="canvas1" width="700" height="400"></canvas>
         </div>
 
-        <div class="preview-card">
-            <h3>Lane 2</h3>
-            <canvas id="canvas2" width="700" height="400"></canvas>
-        </div>
-
-        <div class="preview-card">
-            <h3>Lane 3</h3>
-            <canvas id="canvas3" width="700" height="400"></canvas>
-        </div>
-
-        <div class="preview-card">
-            <h3>Lane 4</h3>
-            <canvas id="canvas4" width="700" height="400"></canvas>
-        </div>
-
-    </div>
-
-    <div class="action-buttons">
-
-        <button id="savePolygonsBtn">
-            Save Lane Areas
-        </button>
-
-        <button id="processTrafficBtn">
-            Start Detection
-        </button>
-
-    </div>
-
-    <div id="loadingBox" class="loading-box" style="display:none;">
-
-        <h2>🚦 Processing Traffic...</h2>
-
-        <p>Please wait while YOLO detects vehicles.</p>
-
-    </div>
+    </main>
 
     <script src="script.js"></script>
 

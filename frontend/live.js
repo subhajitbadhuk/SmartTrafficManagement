@@ -4,37 +4,74 @@ const trafficData = JSON.parse(
     localStorage.getItem("trafficData")
 );
 
-console.log("Traffic Data:", trafficData);
+const uploadedImagePreviews = JSON.parse(
+    localStorage.getItem("uploadedImagePreviews") || "{}"
+);
 
 if (!trafficData) {
-    alert("No traffic data found. Run detection first.");
+    alert("No traffic data found. Please run detection first.");
+    window.location.href = "index.html";
 }
 
 // ============================
-// LOAD IMAGES
+// LOAD PAGE
 // ============================
 
-loadImages();
-showVehicleData();
-startSignalCycle();
+if (trafficData) {
+    loadImages();
+    showVehicleData();
+    startSignalCycle();
+}
+
+// ============================
+// LOAD DETECTED IMAGES
+// ============================
 
 function loadImages() {
 
-    document.getElementById("lane1Img").src =
-        trafficData.lane1_image + "?t=" + Date.now();
+    for (let i = 1; i <= 4; i++) {
 
-    document.getElementById("lane2Img").src =
-        trafficData.lane2_image + "?t=" + Date.now();
+        const imageElement =
+            document.getElementById(`lane${i}Img`);
 
-    document.getElementById("lane3Img").src =
-        trafficData.lane3_image + "?t=" + Date.now();
+        const laneName =
+            `lane${i}`;
 
-    document.getElementById("lane4Img").src =
-        trafficData.lane4_image + "?t=" + Date.now();
+        const detectedImage =
+            trafficData[`${laneName}_image`];
+
+        const originalPreview =
+            uploadedImagePreviews[laneName];
+
+        imageElement.onerror = function () {
+
+            if (originalPreview && imageElement.src !== originalPreview) {
+
+                imageElement.src = originalPreview;
+
+            }
+
+        };
+
+        if (detectedImage) {
+
+            imageElement.src =
+                detectedImage + "?t=" + Date.now();
+
+        }
+
+        else if (originalPreview) {
+
+            imageElement.src = originalPreview;
+
+        }
+
+    }
+
 }
 
 // ============================
-// SHOW DATA
+// SHOW VEHICLE DATA
 // ============================
 
 function showVehicleData() {
@@ -43,42 +80,59 @@ function showVehicleData() {
     updateLane(2, trafficData.lane2);
     updateLane(3, trafficData.lane3);
     updateLane(4, trafficData.lane4);
+
 }
 
 function updateLane(laneNo, data) {
 
+    if (!data) return;
+
     const score =
-        (data.cars * 1) +
-        (data.buses * 3) +
-        (data.trucks * 4) +
-        (data.motorcycles * 0.5);
+        (data.cars * 2) +
+        (data.buses * 5) +
+        (data.trucks * 5) +
+        (data.motorcycles * 1) +
+        (data.autorickshaws * 2) +
+        (data.bicycles * 1);
 
-    document.getElementById(
-        `lane${laneNo}Total`
-    ).innerHTML =
-        `Traffic Score: ${Math.round(score)}
-        <br>
-        Total Vehicles: ${data.total}`;
+    document.getElementById(`lane${laneNo}Total`).innerHTML =
+        `
+        <b>Traffic Score:</b> ${Math.round(score)}<br>
+        <b>Total Vehicles:</b> ${data.total}
+        `;
 
-    document.getElementById(
-        `lane${laneNo}Cars`
-    ).innerHTML =
-        `Cars: ${data.cars}`;
+    document.getElementById(`lane${laneNo}Cars`).innerHTML =
+        `Cars : ${data.cars}`;
 
-    document.getElementById(
-        `lane${laneNo}Bus`
-    ).innerHTML =
-        `Buses: ${data.buses}`;
+    document.getElementById(`lane${laneNo}Bus`).innerHTML =
+        `Buses : ${data.buses}`;
 
-    document.getElementById(
-        `lane${laneNo}Truck`
-    ).innerHTML =
-        `Trucks: ${data.trucks}`;
+    document.getElementById(`lane${laneNo}Truck`).innerHTML =
+        `Trucks : ${data.trucks}`;
 
-    document.getElementById(
-        `lane${laneNo}Bike`
-    ).innerHTML =
-        `Motorcycles: ${data.motorcycles}`;
+    document.getElementById(`lane${laneNo}Bike`).innerHTML =
+        `Motorcycles : ${data.motorcycles}`;
+
+    const autoElement =
+        document.getElementById(`lane${laneNo}Auto`);
+
+    if (autoElement) {
+
+        autoElement.innerHTML =
+            `Auto Rickshaws : ${data.autorickshaws}`;
+
+    }
+
+    const bicycleElement =
+        document.getElementById(`lane${laneNo}Bicycle`);
+
+    if (bicycleElement) {
+
+        bicycleElement.innerHTML =
+            `Bicycles : ${data.bicycles}`;
+
+    }
+
 }
 
 // ============================
@@ -95,10 +149,12 @@ async function startSignalCycle() {
                 trafficData[`lane${lane}`];
 
             const weightedCount =
-                (laneData.cars * 1) +
-                (laneData.buses * 3) +
-                (laneData.trucks * 4) +
-                (laneData.motorcycles * 0.5);
+                (laneData.cars * 2) +
+                (laneData.buses * 5) +
+                (laneData.trucks * 5) +
+                (laneData.motorcycles * 1) +
+                (laneData.autorickshaws * 2) +
+                (laneData.bicycles * 1);
 
             const greenTime =
                 Math.min(
@@ -109,95 +165,72 @@ async function startSignalCycle() {
                     40
                 );
 
-            console.log(
-                `Lane ${lane} -> ${greenTime}s`
-            );
-
             await activateLane(
                 lane,
                 greenTime
             );
+
         }
+
     }
+
 }
 
 // ============================
 // ACTIVATE LANE
 // ============================
 
-function activateLane(
-    laneNo,
-    seconds
-) {
+function activateLane(laneNo, seconds) {
 
     return new Promise((resolve) => {
 
         for (let i = 1; i <= 4; i++) {
 
             const card =
-                document.getElementById(
-                    `lane${i}Card`
-                );
+                document.getElementById(`lane${i}Card`);
 
-            card.classList.remove(
-                "active"
-            );
+            card.classList.remove("active");
+            card.classList.add("waiting");
 
-            card.classList.add(
-                "waiting"
-            );
-
-            document.getElementById(
-                `lane${i}Status`
-            ).innerText =
+            document.getElementById(`lane${i}Status`).innerText =
                 "WAITING";
 
-            document.getElementById(
-                `lane${i}Timer`
-            ).innerText =
+            document.getElementById(`lane${i}Timer`).innerText =
                 "0s";
+
         }
 
         const activeCard =
-            document.getElementById(
-                `lane${laneNo}Card`
-            );
+            document.getElementById(`lane${laneNo}Card`);
 
-        activeCard.classList.remove(
-            "waiting"
-        );
+        activeCard.classList.remove("waiting");
+        activeCard.classList.add("active");
 
-        activeCard.classList.add(
-            "active"
-        );
-
-        document.getElementById(
-            `lane${laneNo}Status`
-        ).innerText =
+        document.getElementById(`lane${laneNo}Status`).innerText =
             "ACTIVE";
 
         let timer = seconds;
 
-        const interval =
-            setInterval(() => {
+        document.getElementById(`lane${laneNo}Timer`).innerText =
+            timer + "s";
 
-                document.getElementById(
-                    `lane${laneNo}Timer`
-                ).innerText =
-                    timer + "s";
+        const interval = setInterval(() => {
 
-                timer--;
+            timer--;
 
-                if (timer < 0) {
+            document.getElementById(`lane${laneNo}Timer`).innerText =
+                timer + "s";
 
-                    clearInterval(
-                        interval
-                    );
+            if (timer <= 0) {
 
-                    resolve();
-                }
+                clearInterval(interval);
 
-            }, 1000);
+                resolve();
+
+            }
+
+        }, 1000);
 
     });
+
 }
