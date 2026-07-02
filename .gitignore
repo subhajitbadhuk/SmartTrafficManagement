@@ -71,7 +71,6 @@ tmp/
 # Model Weights
 # ======================================================
 
-best.pt
 last.pt
 
 # Uncomment the next line if you DON'T want to upload
